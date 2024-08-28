@@ -1,0 +1,63 @@
+name: Production build Deployment
+on:
+  pull_request:
+    types:
+      - locked
+jobs:
+  deploy:
+    if: contains(github.head_ref, 'release_') && contains(github.base_ref, 'main') && github.event.action == 'closed' && github.event.pull_request.merged == true
+    runs-on: [self-hosted, linux]
+    environment: System10_SIT
+    steps:
+      - name: Get build artifacts
+        run: echo "Get artifacts"
+      - name: Deploy
+        run: echo "Deploying to SIT"
+  test:
+    needs: deploy
+    # run the npm test configured in the package.json file
+    runs-on: [self-hosted, linux]
+    steps:
+      # get the code
+      - name: Get code
+        uses: actions/checkout@v3
+      # install package dependancies
+      - name: Install dependencies
+        run: npm ci
+      # run the test command
+      - name: Test code
+        id: run-tests
+        run: npm run test
+  lint:
+    needs: test
+    # run the npm lint
+    runs-on: [self-hosted, linux]
+    steps:
+      # get the code
+      - name: Get code
+        uses: actions/checkout@v3
+      # install package dependancies
+      - name: Install dependencies
+        run: npm ci
+  SonarQube:
+    # scan the code
+    needs: test
+    runs-on: [self-hosted, linux]
+    steps:
+      # get the code
+      - name: Get code
+        uses: actions/checkout@v3
+      # scan the code and pass in the workflow run id so the webhook from sonarqube can pass it to Plutora
+      - name: Scan
+        run: echo "Scan succeeded"
+  build:
+    needs: SonarQube
+    runs-on: [self-hosted, linux]
+    steps:
+      - name: Get code
+        uses: actions/checkout@v3
+      - name: Install dependencies
+        run: npm ci
+      - name: Build website
+        id: build-website
+        run: echo "Build"

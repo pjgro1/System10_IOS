@@ -1,0 +1,69 @@
+name: Release Merge Deployment
+on:
+  pull_request:
+    types:
+      - closed
+jobs:
+  lint:
+    if: contains(github.base_ref, 'release_') && github.event.action == 'closed' && github.event.pull_request.merged == true
+    # run the npm lint
+    runs-on: [self-hosted, linux]
+    steps:
+      # get the code
+      - name: Get code
+        uses: actions/checkout@v3
+      # install package dependancies
+      - name: Install dependencies
+        run: npm ci
+      # run the lint command
+      - name: Lint code
+        run: npm run lint
+  test:
+    needs: lint
+    # run the npm test configured in the package.json file
+    runs-on: [self-hosted, linux]
+    steps:
+      # get the code
+      - name: Get code
+        uses: actions/checkout@v3
+      # install package dependancies
+      - name: Install dependencies
+        run: npm ci
+      # run the test command
+      - name: Test code
+        id: run-tests
+        run: echo "run tests"
+  SonarQube:
+    # scan the code
+    needs: test
+    runs-on: [self-hosted, linux]
+    steps:
+      # get the code
+      - name: Get code
+        run: echo "Scan"
+  build:
+    needs: SonarQube
+    runs-on: [self-hosted, linux]
+    steps:
+      - name: Get code
+        uses: actions/checkout@v3
+      - name: Install dependencies
+        run: npm ci
+      - name: Build website
+        id: build-website
+        uses: mscoutermarsh/cowsays-action@v1
+        with:
+          text: "Built"
+          color: "Green"
+  deploy:
+    needs: build
+    runs-on: [self-hosted, linux]
+    environment: System10_UAT
+    steps:
+      - name: Output contents
+        run: ls
+      - name: Deploy
+        uses: mscoutermarsh/cowsays-action@v1
+        with:
+          text: "Deployed to UAT"
+          color: "Red"
