@@ -9,7 +9,7 @@ const HELP_ITEMS = [
   },
   {
     id: 'h2',
-    title: 'What is Plutora?',
+    title: 'What is Plutora? ',
     text: 'Plutora is a SaaS product for release and environment management',
   },
   {
